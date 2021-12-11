@@ -1,0 +1,176 @@
+---
+title: "Untitled"
+author: "zhiyuan zhang"
+date: "2021/11/10"
+output: html_document
+---
+
+```{r}
+library(readxl)
+SleepStudy <- read.csv("C:/Users/jorge/Desktop/SleepStudy.csv")
+##read data
+head(SleepStudy)
+library(data.table)
+```
+
+```{r}
+Drinks <- SleepStudy$Drinks
+StressScore <- SleepStudy$StressScore
+CognitionZscore<-SleepStudy$CognitionZscore
+GPA <-SleepStudy$GPA
+DASScore <-SleepStudy$DASScore
+model1 <- glm(GPA ~ Drinks+CognitionZscore+StressScore+DASScore)
+b1 <- coef(model1)[[1]]
+b2 <- coef(model1)[[2]]#DRINKS
+b3 <- coef(model1)[[3]]#COGNI
+b4 <- coef(model1)[[4]]#STRESS
+b5 <- coef(model1)[[5]]# Das
+summary(model1)
+
+y = GPA
+alpha<-0.05
+quantile(y,probs=c(alpha/2,1-alpha/2))
+par(mfrow= c(2,2))
+hist(Drinks)
+hist(CognitionZscore)
+hist(StressScore)
+hist(DASScore)
+
+```
+
+```{r,error=TRUE}
+library(data.table)
+set.seed(470)
+n = 1000
+itera = 1000
+store1 <-rep(0,itera)
+store2 <-rep(0,itera)
+store3 <-rep(0,itera)
+store4 <-rep(0,itera)
+strore_y <-rep(0,itera)
+## store the data for bi
+x<- mean(GPA)
+
+for (i in 1:itera){
+  error = rnorm(n, mean = 1, sd = 1) 
+  xdr = rlnorm(n, meanlog = 1, sdlog = 0.7)
+  xcog = rnorm(n, mean=0, sd = 1)
+  xstre = rlnorm(n, meanlog = 1, sdlog = 0.5)
+  xdas = rlnorm(n,meanlog = 1, sdlog = 0.5)
+  Y_i = b1 + b2*xdr+b3*xcog+b4*xstre+b5*xdas
+  
+  fun_i <-glm(Y_i~xdr+xcog+xstre+xdas)
+  
+  store1[i] <- coef(fun_i)[[2]]
+  store2[i] <-coef(fun_i)[[3]]
+  store3[i] <-coef(fun_i)[[4]]
+  store4[i]<-coef(fun_i)[[5]]
+  strore_y[i] <-Y_i[i]
+  
+  data_i = data.table(Y = Y_i)
+
+}
+
+sd1 <-sd(strore_y)
+mean1 <- mean(strore_y)
+plot(density(strore_y), main = "Density plot of GPA")
+curve(dnorm(x, mean1, sd1), col="red", add=TRUE)
+hist( strore_y, prob=TRUE)
+curve(dnorm(x, mean1, sd1), col="red", add=TRUE)
+
+
+alpha<-0.05
+quantile(strore_y,probs=c(alpha/2,1-alpha/2))
+
+par(mfrow= c(2,2))
+hist(store1, main = "parameter1 with 100 times")
+hist(store2, main = "parameter2 with 100 times")
+hist(store3, main = "parameter3 with 100 times")
+hist(store3, main = "parameter4 with 100 times")
+```
+
+```{r}
+#for(itera in 1:500){
+  #plot(Y_i[1:itera],  xlab = "iteration", ylab = "GPA", main = "rough CI for 500 iteration")
+  #points(Y_i[itera], col ="red")
+  #Sys.sleep(0.04)
+#}
+
+```
+
+```{r}
+hist(store1)##drink
+hist(store3)## stress
+b2
+b4
+```
+
+
+```{r}
+set.seed(470)
+n = 1000
+itera = 100
+store1 <-rep(0,itera)
+store2 <-rep(0,itera)
+store3 <-rep(0,itera)
+store4 <-rep(0,itera)
+strore_y <-rep(0,itera)
+## store the data for bi
+x<- mean(GPA)
+
+for (i in 1:itera){
+  error = rnorm(n, mean = 0, sd = 1) 
+  xdr = rlnorm(n, meanlog = 1, sdlog = 0.7)
+  xcog = rnorm(n, mean=0, sd = 1)
+  xstre = rlnorm(n, meanlog = 1, sdlog = 0.5)
+  xdas = rlnorm(n,meanlog = 1, sdlog = 0.5)
+  Y_i = b1 + b2*xdr+b3*xcog+b4*xstre+b5*xdas
+  
+  fun_i <-glm(Y_i~xdr+xcog+xstre+xdas)
+  
+  store1[i] <- coef(fun_i)[[2]]
+  store2[i] <-coef(fun_i)[[3]]
+  store3[i] <-coef(fun_i)[[4]]
+  store4[i]<-coef(fun_i)[[5]]
+  strore_y[i] <-Y_i[i]
+  
+  data_i = data.table(Y = Y_i)
+
+}
+
+sd1 <-sd(strore_y)
+mean1 <- mean(strore_y)
+
+plot(density(strore_y))
+curve(dnorm(x, mean1, sd1), col="red", add=TRUE)
+hist(strore_y, prob=TRUE)
+curve(dnorm(x, mean1, sd1), col="red", add=TRUE)
+
+
+hist(store1)
+
+```
+
+
+```{r}
+BlackScholes <- function(S, K, r, T, sig, type){
+  
+  if(type=="C"){
+  d1 <- (log(S/K) + (r + sig^2/2)*T) / (sig*sqrt(T))
+  d2 <- d1 - sig*sqrt(T)
+  
+  value <- S*pnorm(d1) - K*exp(-r*T)*pnorm(d2)
+  return(value)}
+  
+  if(type=="P"){
+  d1 <- (log(S/K) + (r + sig^2/2)*T) / (sig*sqrt(T))
+  d2 <- d1 - sig*sqrt(T)
+  
+  value <-  (K*exp(-r*T)*pnorm(-d2) - S*pnorm(-d1))
+  return(value)}
+}
+
+call <- BlackScholes(110,100,0.04,1,0.2,"C")
+put <- BlackScholes(110,100,0.04,1,0.2,"P")
+
+````
